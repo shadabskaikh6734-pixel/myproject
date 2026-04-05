@@ -97,6 +97,27 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * c; // distance in KM
 }
 
+function getServiceIcon(category) {
+  switch(category) {
+    case "Cleaning":
+      return "img/cleaner.jpeg";
+
+    case "Plumbing":
+      return "img/plumber.jpeg";
+
+    case "Repair":
+      return "img/repair.jpeg";
+
+    case "Electrical":
+      return "img/electrician.jpeg";
+
+    default:
+      return "img/cleaner.jpeg";
+  }
+}
+
+
+
 
 const supabaseUrl = "https://xxnrletnimdnyoezdbaw.supabase.co";  
 const supabaseKey = "sb_publishable_WFkzTdZXcwsCADIP814onw_EnBAbf5p";
@@ -129,6 +150,7 @@ async function loadNearbyServices(userLat, userLng) {
            div.classList.add("service-card");
 
 div.innerHTML = `
+<img src="${getServiceIcon(service.category)}" class="service-icon">
     <h3>${service.service_name}</h3>
 
     <p><strong>Category:</strong> ${service.category}</p>
@@ -226,6 +248,7 @@ if (!userLat || !userLng) {
         div.classList.add("service-card");
 
         div.innerHTML = `
+        <img src="${getServiceIcon(service.category)}" class="service-icon">
             <h3>${service.service_name}</h3>
              <span class="rating">
   ⭐ ${service.rating ? service.rating : "No rating"}
@@ -389,6 +412,7 @@ function renderServices(list) {
         div.classList.add("service-card");
 
         div.innerHTML = `
+        <img src="${getServiceIcon(service.category)}" class="service-icon">
             <h3>${service.service_name}</h3>
             <span class="rating">
   ⭐ ${service.rating ? service.rating : "No rating"}
