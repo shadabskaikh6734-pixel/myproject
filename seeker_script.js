@@ -65,8 +65,7 @@ function getUserLocation() {
             (error) => {
                 console.log("Location denied or blocked ❌");
 
-                // ❌ DO NOT SAVE FAKE LOCATION
-                // ❌ DO NOT use fallback
+                
 
                 resultsDiv.innerHTML = `
                     <p>⚠ Please enable location</p>
@@ -125,7 +124,7 @@ async function loadNearbyServices(userLat, userLng) {
             service.lng
         );
 
-        if (distance <= 2) { // 🔥 0–1 KM filter
+        if (distance <= 2) { // 🔥 0–2 KM filter
             const div = document.createElement("div");
            div.classList.add("service-card");
 
@@ -258,7 +257,7 @@ if (!userLat || !userLng) {
         resultsDiv.appendChild(div);
     });
 
-    // 🔥 PAGINATION BUTTONS
+    // PAGINATION BUTTONS
     const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
     const paginationDiv = document.createElement("div");
@@ -272,7 +271,7 @@ if (currentPage > 1) {
     paginationDiv.appendChild(prevBtn);
 }
 
-// PAGE NUMBERS (🔥 PRO LOOK)
+// PAGE NUMBERS
 
 
 for (let i = 1; i <= totalPages; i++) {
@@ -446,7 +445,7 @@ async function filterQuick() {
         distance: getDistance(userLat, userLng, service.lat, service.lng)
     }));
 
-    // 🔥 MAIN FILTER
+    //  MAIN FILTER
     const filtered = servicesWithDistance.filter(service =>
         service.distance <= MAX_DISTANCE &&
         service.availability === "Available"
@@ -455,12 +454,12 @@ async function filterQuick() {
     // nearest first
     filtered.sort((a, b) => a.distance - b.distance);
 
-    // 🔥 LIMIT (important UX)
+    //  LIMIT (important UX)
     const limited = filtered.slice(0, 20);
 
     renderServices(limited);
 
-    // 🔥 SHOW COUNT
+    //  SHOW COUNT
     const resultsDiv = document.getElementById("results");
     resultsDiv.insertAdjacentHTML(
         "afterbegin",
@@ -490,7 +489,7 @@ function bookService(providerId, serviceId) {
   if (!address) {
     openAddress();
 
-    document.getElementById("addressWarning").style.display = "block"; // 👈 ADD THIS
+    document.getElementById("addressWarning").style.display = "block"; 
 
     return;
   }
@@ -511,12 +510,12 @@ function openBooking() {
   // ✅ show overlay
   overlay.style.display = "block";
 
-  // 🔥 start animation state
+  
   popup.style.display = "block";
   popup.style.opacity = "0";
   popup.style.transform = "translate(-50%, -60%) scale(0.9)";
 
-  // 🔥 animate in
+
   setTimeout(() => {
     popup.style.opacity = "1";
     popup.style.transform = "translate(-50%, -50%) scale(1)";
@@ -874,7 +873,7 @@ async function rateService(bookingId, rating, serviceId) {
 if (isBookingView) {
   loadUserBookings();   // stay in bookings page
 } else {
-  applyFilters();       // refresh services list (IMPORTANT)
+  applyFilters();       // refresh services list 
 }
 }
 
