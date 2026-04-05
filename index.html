@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='style.css'>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+     <!-- Welcome Card -->
+  
+
+<div class="app">
+
+  <!-- Welcome -->
+  <div class="center" id="welcome">
+    <div class="card">
+      <h2>Welcome, who are you?</h2>
+
+      <button class="seeker" onclick="goSeeker()">Service Seeker</button>
+     
+      <button class="provider" onclick="goProvider()">Provider</button>
+    </div>
+  </div>
+
+
+
+
+  <!-- Provider -->
+ <div id="provider" class="hidden center">
+  <div class="form-card">
+<span class="close-btn" onclick="goBack()">×</span>
+
+<h2>Provider Registration</h2>
+
+    <input id="name" type="text" placeholder="Full Name">
+    <input id="email" type="email" placeholder="Email">
+    <div style="position:relative;">
+  <input type="password" id="password" placeholder="Password">
+
+  <span onclick="togglePassword('password')" 
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">
+    👁️
+  </span>
+</div>
+    <input id="phone" type="text" placeholder="Phone Number">
+    <button onclick="getLocation()">Use My Location 📍</button>
+      <p id="locationStatus"></p>
+    <input type="text" id="lat" hidden>
+    <input type="text" id="lng" hidden>
+
+    <div class="btn-group">
+      <button class="register" onclick="registerProvider(this)">Register</button>
+        <p class="login-text">
+             Already have an account? 
+         <span onclick="openLogin()">Login</span>
+        </p>
+    </div>
+
+  </div>
+</div>
+
+<div id="loginPage" class="hidden center">
+  <div class="form-card">
+
+    <span class="close-btn" onclick="goBack()">✖</span>
+
+    <h2>Provider Login</h2>
+
+    <input type="email" id="loginEmail" placeholder="Email"  autocomplete="off">
+   <div style="position:relative;">
+  <input type="password" id="loginPassword" placeholder="Password">
+
+  <span onclick="togglePassword('loginPassword')" 
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer;">
+    👁️
+  </span>
+</div>
+    <div class="btn-group">
+      <button class="login" onclick="loginProvider()">Login</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script src='script.js'></script>
+</body>
+</html>
