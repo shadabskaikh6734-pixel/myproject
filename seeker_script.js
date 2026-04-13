@@ -4,7 +4,7 @@ let isBookingView = false;
 
 function updateUI() {
 
-  const user = localStorage.getItem("user_id");
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const logoutBtn = document.getElementById("logoutBtn");
   const notificationBtn = document.getElementById("notificationBtn");
@@ -22,7 +22,13 @@ function updateUI() {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-   
+   const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+  alert("Please login first ❌");
+  window.location.href = "index.html";
+  return;
+}
 
 
       updateUI();
@@ -177,7 +183,9 @@ let currentPage = 1;
 const itemsPerPage = 12;
 
 async function applyFilters(resetPage = false) {
+  document.getElementById("topSearchBar").style.display = "flex";
 closeAllPopups();
+document.getElementById("quickTitle").innerText = "";
 
   document.getElementById("results").classList.remove("booking-mode");
   isBookingView = false;
@@ -317,7 +325,8 @@ if (currentPage < totalPages) {
     paginationDiv.appendChild(nextBtn);
 }
 
-resultsDiv.appendChild(paginationDiv);
+document.getElementById("pagination").innerHTML = "";
+document.getElementById("pagination").appendChild(paginationDiv);
 }
 
 
@@ -348,7 +357,14 @@ function changePage(page) {
 }
 
 async function loadAllServices() {
+  document.getElementById("topSearchBar").style.display = "flex";
   closeAllPopups();
+  document.getElementById("filterCategory").value = "";
+  document.getElementById("filterArea").value = "";
+  document.getElementById("searchInput").value = "";
+
+  document.getElementById("quickTitle").innerText = "";
+  document.getElementById("pagination").innerHTML = "";
   isBookingView = false;
   document.getElementById("results").classList.remove("booking-mode");
 
@@ -447,13 +463,19 @@ function renderServices(list) {
 
 
 async function filterQuick() {
-  closeAllPopups();
+    document.getElementById("topSearchBar").style.display = "none";
 
+  closeAllPopups();
+  document.getElementById("filterCategory").value = "";
+  document.getElementById("filterArea").value = "";
+  document.getElementById("searchInput").value = "";
+
+  document.getElementById("pagination").innerHTML = "";
   isBookingView = false;
     const userLat = parseFloat(localStorage.getItem("userLat"));
     const userLng = parseFloat(localStorage.getItem("userLng"));
 
-    const MAX_DISTANCE = 500; // tighter = better UX
+    const MAX_DISTANCE = 2; // tighter = better UX
 
     const { data, error } = await supabaseClient
         .from("services")
@@ -485,12 +507,8 @@ async function filterQuick() {
 
     //  SHOW COUNT
     const resultsDiv = document.getElementById("results");
-    resultsDiv.insertAdjacentHTML(
-        "afterbegin",
-        `<p style="margin-bottom:10px; font-weight:bold;">
-            ⚡ ${limited.length} quick services found
-        </p>`
-    );
+    document.getElementById("quickTitle").innerText =
+  `⚡ ${limited.length} quick services found`;
 }
 
 function bookService(providerId, serviceId) {
@@ -500,7 +518,7 @@ function bookService(providerId, serviceId) {
 
   // 👇 CLOSE existing popup first
   closeAllPopups();
-  const user = localStorage.getItem("user_id");
+  const user = JSON.parse(localStorage.getItem("user"))?.id;
 
   if (!user) {
     document.getElementById("authModal").classList.remove("hidden");
@@ -561,7 +579,7 @@ async function submitBooking() {
     .insert([{
       provider_id: providerId,
       service_id: serviceId,
-      user_id: localStorage.getItem("user_id"),
+      user_id: JSON.parse(localStorage.getItem("user"))?.id,
       address: localStorage.getItem("user_address"),
       status: "pending"
     }]);
@@ -641,8 +659,9 @@ function saveAddress() {
 
 
 
-function logout() {
-  localStorage.removeItem("user_id");
+async function logout() {
+  await supabaseClient.auth.signOut(); // 🔥 IMPORTANT
+  localStorage.clear();
   localStorage.removeItem("user_address");
 
   // 🔥 ADD THESE (IMPORTANT)
@@ -734,7 +753,7 @@ async function handleAuth() {
   }
 
   // ✅ SAVE SESSION
-  localStorage.setItem("user_id", data.id);
+ 
 
   // ✅ REDIRECT
   window.location.href = "seeker_dashboard.html";
@@ -743,11 +762,15 @@ async function handleAuth() {
 async function loadUserBookings() {
 
   isBookingView = true;
+  document.getElementById("topSearchBar").style.display = "none";
+
+  document.getElementById("quickTitle").innerText = "";
+  document.getElementById("pagination").innerHTML = "";
 
   const resultsDiv = document.getElementById("results");
   resultsDiv.innerHTML = "Loading bookings...";
 
-  const userId = localStorage.getItem("user_id");
+  const userId = JSON.parse(localStorage.getItem("user"))?.id;
 
   const { data, error } = await supabaseClient
     .from("bookings")
@@ -758,7 +781,11 @@ async function loadUserBookings() {
   status,
   address,
   services!bookings_service_id_fkey(service_name),
-  providers!bookings_provider_id_fkey(name, phone)
+  provider:users!bookings_provider_id_fkey(
+  id,
+  name,
+  phone
+)
 `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
@@ -776,11 +803,12 @@ function displayUserBookings(bookings) {
 
   const resultsDiv = document.getElementById("results");
 
-resultsDiv.classList.add("booking-mode");
+
 
 resultsDiv.innerHTML = `
-  <h2>🔔 Your Bookings</h2>
-  <div id="bookingList"></div>
+  <div style="grid-column: 1 / -1;">
+    <h2>🔔 Your Bookings</h2>
+  </div>
 `;
   if (bookings.length === 0) {
     resultsDiv.innerHTML += "<p>No bookings yet</p>";
@@ -799,8 +827,8 @@ resultsDiv.innerHTML = `
     div.innerHTML = `
   <h3>${b.services?.service_name}</h3>
 
-  <p><strong>Provider:</strong> ${b.providers?.name}</p>
-  <p><strong>Phone:</strong> ${b.providers?.phone}</p>
+  <p><strong>Provider:</strong> ${b.provider?.name}</p>
+  <p><strong>Phone:</strong> ${b.provider?.phone}</p>
   <p><strong>Address:</strong> ${b.address}</p>
 
   <p>Status: 
@@ -827,13 +855,13 @@ resultsDiv.innerHTML = `
 }
 `;
 
-   document.getElementById("bookingList").appendChild(div);
+   resultsDiv.appendChild(div);
   });
 }
 
 async function checkNewNotifications() {
 
-  const userId = localStorage.getItem("user_id");
+  const userId = JSON.parse(localStorage.getItem("user"))?.id;
 
   const { data } = await supabaseClient
     .from("bookings")

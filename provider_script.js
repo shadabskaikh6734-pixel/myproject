@@ -1,23 +1,25 @@
+let providerLocation = { lat: null, lng: null };
+
 window.onload = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // 🔒 Protect dashboard
   if (!user) {
     alert("Please login first ❌");
     window.location.href = "index.html";
     return;
   }
 
-  console.log(user);
-
-  // ✅ Show username safely
   const usernameEl = document.getElementById("username");
 
   if (usernameEl) {
     usernameEl.innerText = user.name;
   }
-    loadServices();
+
+  // 🔥 ASK LOCATION HERE
+  getProviderLocation();
+
+  loadServices();
 };
 
 const supabaseUrl = "https://xxnrletnimdnyoezdbaw.supabase.co";  
@@ -25,9 +27,25 @@ const supabaseKey = "sb_publishable_WFkzTdZXcwsCADIP814onw_EnBAbf5p";
 
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
+function getProviderLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        providerLocation.lat = pos.coords.latitude;
+        providerLocation.lng = pos.coords.longitude;
 
-function logout() {
-  localStorage.removeItem("user");
+        console.log("Provider Location:", providerLocation);
+      },
+      () => {
+        alert("Please allow location access ❌");
+      }
+    );
+  }
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut(); // 🔥 IMPORTANT
+  localStorage.clear();
   window.location.href = "index.html";
 }
 
@@ -55,7 +73,7 @@ function loadAdd() {
       </select>
 
       <input type="text" id="phone" placeholder="Phone Number">
-      <p id="phoneError" style="color:red; font-size:12px;"></p>
+      
       <input type="text" id="area" placeholder="Enter Area (e.g. Andheri)">
 
       <button onclick="addService()">Save Service</button>
@@ -67,7 +85,6 @@ function loadAdd() {
   const phoneInput = document.getElementById("phone");
   if (phoneInput) {
     phoneInput.addEventListener("input", () => {
-      document.getElementById("phoneError").innerText = "";
       phoneInput.style.border = "1px solid #ccc";
     });
   }
@@ -76,6 +93,7 @@ function loadAdd() {
 }
 
 async function addService() {
+
   const serviceName = document.getElementById("serviceName").value;
   const category = document.getElementById("category").value;
   const description = document.getElementById("description").value;
@@ -83,59 +101,41 @@ async function addService() {
   const phone = document.getElementById("phone").value;
   const area = document.getElementById("area").value;
 
-  const phoneError = document.getElementById("phoneError");
-
   // ✅ Validation
   if (!serviceName || !phone || !area) {
     alert("Please fill required fields");
     return;
   }
 
-  if (phone.length < 10) {
-    phoneError.innerText = "Enter valid phone number ❌";
-    document.getElementById("phone").style.border = "1px solid red";
-    return;
-  } else {
-    phoneError.innerText = "";
-    document.getElementById("phone").style.border = "1px solid #ccc";
-  }
-
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // ✅ GET LOCATION HERE
-  navigator.geolocation.getCurrentPosition(async (pos) => {
+  // ❗ USE STORED LOCATION (from page load)
+  if (!providerLocation || !providerLocation.lat) {
+    alert("Location not available. Please refresh and allow location.");
+    return;
+  }
 
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+  const { error } = await supabaseClient
+    .from("services")
+    .insert([{
+      service_name: serviceName,
+      category,
+      description,
+      availability,
+      phone,
+      area,
+      lat: providerLocation.lat,
+      lng: providerLocation.lng,
+      provider_id: user.id
+    }]);
 
-    console.log("Saving location:", lat, lng);
-
-    const { error } = await supabaseClient
-      .from("services")
-      .insert([{
-        service_name: serviceName,
-        category,
-        description,
-        availability,
-        phone,
-        area,
-        lat,       // ✅ NEW
-        lng,       // ✅ NEW
-        provider_id: user.id
-      }]);
-
-    if (error) {
-      alert("Error: " + error.message);
-    } else {
-      alert("Service added ✅");
-      loadServices();
-    }
-
-  }, () => {
-    alert("Please allow location access ❌");
-  });
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    alert("Service added ✅");
+    loadServices();
+  }
 }
-
 
 function loadServices() {
   document.getElementById("contentArea").innerHTML = `
@@ -291,7 +291,8 @@ const providerId = user?.id;
       id,
       status,
       address,
-      users(name, phone),
+      created_at,
+      users!bookings_user_id_fkey(name, phone),
       services(service_name)
     `)
     .eq("provider_id", providerId)
@@ -339,7 +340,7 @@ function displayBookings(bookings) {
       <p><strong>User:</strong> ${b.users?.name}</p>
       <p><strong>Phone:</strong> ${b.users?.phone}</p>
       <p><strong>Address:</strong> ${b.address}</p>
-
+      <p><strong>Booked On:</strong> ${formatDateTime(b.created_at)}</p>
       <div class="card-actions">
         ${actions}
       </div>
@@ -369,4 +370,17 @@ async function updateBooking(id, status, btn) {
   } else {
     loadBookings(); // refresh UI
   }
+}
+
+
+function formatDateTime(dateString) {
+  const date = new Date(dateString);
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
